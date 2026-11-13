@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { MongoClient } from "mongodb";
+import { ObjectId } from "mongodb";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -47,6 +48,16 @@ app.get("/jobs", async (req, res) => {
 app.post("/jobs", async (req, res) => {
   const jobs = req.body;
   const result = await jobCollection.insertOne(jobs);
+  res.send(result);
+});
+
+app.patch("/jobs/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+  const result = await jobCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: data },
+  );
   res.send(result);
 });
 
