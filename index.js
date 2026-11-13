@@ -76,3 +76,5 @@ app.delete("/jobs/:id", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Hireloop is running at ${PORT}`);
 });
+
+export default app;
