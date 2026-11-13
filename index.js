@@ -61,9 +61,15 @@ app.patch("/jobs/:id", async (req, res) => {
   res.send(result);
 });
 
-app.delete("/jobs", async (req, res) => {
+app.delete("/jobs/:id", async (req, res) => {
   const { id } = req.params;
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid job id" });
+  }
   const result = await jobCollection.deleteOne({ _id: new ObjectId(id) });
+  if (result.deletedCount === 0) {
+    return res.status(404).send({ message: "Job not found" });
+  }
   res.send(result);
 });
 
