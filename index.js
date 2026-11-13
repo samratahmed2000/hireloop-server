@@ -61,6 +61,12 @@ app.patch("/jobs/:id", async (req, res) => {
   res.send(result);
 });
 
+app.delete("/jobs", async (req, res) => {
+  const { id } = req.params;
+  const result = await jobCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
+
 app.listen(PORT, () => {
   console.log(`Hireloop is running at ${PORT}`);
 });
