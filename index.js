@@ -6,6 +6,9 @@ import { MongoClient } from "mongodb";
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+app.use(cors());
+app.use(express.json());
+
 const client = new MongoClient(process.env.MONGODB_URI);
 
 export async function connectToMongoDB() {
@@ -18,16 +21,33 @@ export async function connectToMongoDB() {
   }
 }
 
-app.use(cors());
-app.use(express.json());
-
 const connectedClient = await connectToMongoDB();
-const db = connectedClient.db("hireloopDB");
-const userCollection = db.collection("users");
-const jobCollection = db.collection("jobs");
+const database = connectedClient.db("hireloopDB");
+const userCollection = database.collection("users");
+const jobCollection = database.collection("jobs");
 
 app.get("/", (req, res) => {
   res.send("Hireloop server is running");
+});
+
+// users
+app.get("/users", async (req, res) => {
+  const cursor = userCollection.find({});
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
+// jobs
+app.get("/jobs", async (req, res) => {
+  const cursor = jobCollection.find({});
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
+app.post("/jobs", async (req, res) => {
+  const jobs = req.body;
+  const result = await jobCollection.insertOne(jobs);
+  res.send(result);
 });
 
 app.listen(PORT, () => {
