@@ -45,38 +45,6 @@ app.get("/jobs", async (req, res) => {
   res.send(result);
 });
 
-app.get("/browse-jobs", async (req, res) => {
-  const query = {};
-
-  if (req.query) {
-    if (req.query.jobType) {
-      query.jobType = req.query.jobType;
-    }
-
-    if (req.query.remote) {
-      query.remote = req.query.remote === "true";
-    }
-
-    if (req.query.jobCategory) {
-      query.jobCategory = req.query.jobCategory;
-    }
-
-    if (req.query.search) {
-      query.$or = [
-        { jobTitle: { $regex: req.query.search, $options: "i" } },
-        { location: { $regex: req.query.search, $options: "i" } },
-        { companyName: { $regex: req.query.search, $options: "i" } },
-        { responsibilities: { $regex: req.query.search, $options: "i" } },
-        { qualifications: { $regex: req.query.search, $options: "i" } },
-      ];
-    }
-  }
-
-  const cursor = jobCollection.find(query);
-  const result = await cursor.toArray();
-  res.send(result);
-});
-
 app.post("/jobs", async (req, res) => {
   const jobs = req.body;
   const result = await jobCollection.insertOne(jobs);
