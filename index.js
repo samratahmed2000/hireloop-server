@@ -120,6 +120,18 @@ app.post("/applications", async (req, res) => {
   res.send(result);
 });
 
+app.get("/applications", async (req, res) => {
+  const query = {};
+
+  if (req.query.applicantId) {
+    query.user = req.query.applicantId;
+  }
+
+  const cursor = applicationCollection.find(query);
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
 app.listen(PORT, () => {
   console.log(`Hireloop is running at ${PORT}`);
 });
