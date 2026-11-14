@@ -26,6 +26,7 @@ const connectedClient = await connectToMongoDB();
 const database = connectedClient.db("hireloopDB");
 const userCollection = database.collection("users");
 const jobCollection = database.collection("jobs");
+const applicationCollection = database.collection("application");
 
 app.get("/", (req, res) => {
   res.send("Hireloop server is running");
@@ -109,6 +110,13 @@ app.delete("/jobs/:id", async (req, res) => {
   if (result.deletedCount === 0) {
     return res.status(404).send({ message: "Job not found" });
   }
+  res.send(result);
+});
+
+// Application
+app.post("/applications", async (req, res) => {
+  const application = req.body;
+  const result = await applicationCollection.insertOne(application);
   res.send(result);
 });
 
