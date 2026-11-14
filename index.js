@@ -77,6 +77,13 @@ app.get("/browse-jobs", async (req, res) => {
   res.send(result);
 });
 
+app.get("/jobs/:id", async (req, res) => {
+  const { id } = req.params;
+  const query = { _id: new ObjectId(id) };
+  const result = await jobCollection.findOne(query);
+  res.send(result);
+});
+
 app.post("/jobs", async (req, res) => {
   const jobs = req.body;
   const result = await jobCollection.insertOne(jobs);
