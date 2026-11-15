@@ -27,7 +27,7 @@ export async function connectToMongoDB() {
 
 const connectedClient = await connectToMongoDB();
 const database = connectedClient.db("hireloopDB");
-const userCollection = database.collection("users");
+const userCollection = database.collection("user");
 const jobCollection = database.collection("jobs");
 const applicationCollection = database.collection("application");
 const paymentCollection = database.collection("payments");
@@ -44,12 +44,23 @@ app.get("/users", async (req, res) => {
 });
 
 app.get("/users/:id/premium", async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) };
-  const result = await userCollection.findOne(query, {
-    projection: { premium: 1 },
-  });
-  res.send(result);
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await userCollection.findOne(query, {
+      projection: { premium: 1 },
+    });
+
+    if (!result) {
+      return res.status(200).json({ premium: false });
+    }
+
+    res.send(result);
+    return;
+  } catch (error) {
+    console.error("Error fetching premium status:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // jobs
@@ -189,7 +200,7 @@ app.post("/payments/checkout_verify", async (req, res) => {
         payment_intent,
       };
 
-      const result = paymentCollection.insertOne(payment);
+      const result = await paymentCollection.insertOne(payment);
 
       // update user
       const query = { _id: new ObjectId(metadata.userId) };
