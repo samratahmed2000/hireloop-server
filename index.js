@@ -3,6 +3,9 @@ import cors from "cors";
 import "dotenv/config";
 import { MongoClient } from "mongodb";
 import { ObjectId } from "mongodb";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -27,6 +30,7 @@ const database = connectedClient.db("hireloopDB");
 const userCollection = database.collection("users");
 const jobCollection = database.collection("jobs");
 const applicationCollection = database.collection("application");
+const paymentCollection = database.collection("payments");
 
 app.get("/", (req, res) => {
   res.send("Hireloop server is running");
@@ -141,6 +145,68 @@ app.get("/applications/count", async (req, res) => {
 
   const result = await applicationCollection.countDocuments(query);
   res.send({ count: result });
+});
+
+// Payments
+app.post("/payments/checkout_verify", async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Session ID is required" });
+    }
+
+    const { status, payment_status, customer_email, metadata, payment_intent } =
+      await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (status === "complete" && payment_status === "paid") {
+      const sessionQuery = { sessionId };
+      const existingPayment = await paymentCollection.findOne(sessionQuery);
+      if (existingPayment) {
+        return res.status(409).json({
+          success: false,
+          message: "Payment Already Verified",
+        });
+      }
+
+      const payment = {
+        sessionId,
+        status,
+        payment_status,
+        customer_email,
+        userId: metadata.userId,
+        payment_date: new Date(),
+        payment_intent,
+      };
+
+      const result = paymentCollection.insertOne(payment);
+
+      // update user
+      const query = { _id: new ObjectId(metadata.userId) };
+
+      const updatedDoc = {
+        $set: {
+          premium: true,
+        },
+      };
+
+      const updatedResult = await userCollection.updateOne(query, updatedDoc);
+
+      res.send({ success: true, result, updatedResult });
+      return;
+    }
+
+    return res
+      .status(400)
+      .json({ success: false, message: "Payment Verification Failed" });
+  } catch (error) {
+    console.error("Checkout verify error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
 });
 
 app.listen(PORT, () => {
